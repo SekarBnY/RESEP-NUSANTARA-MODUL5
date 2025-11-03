@@ -69,7 +69,7 @@ export default function CreateRecipePage({ onBack, onSuccess }) {
       setShowDraftModal(false);
       alert('Draft berhasil dimuat!');
     }
-  };
+  }
 
   // Discard draft
   const handleDiscardDraft = () => {
