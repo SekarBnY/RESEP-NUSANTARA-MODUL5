@@ -1,23 +1,16 @@
-import { apiClient } from '../config/api';
+import { apiClient } from "../config/api";
 
 class RecipeService {
   /**
    * Get all recipes with optional filters
    * @param {Object} params - Query parameters
-   * @param {number} params.page - Page number (default: 1)
-   * @param {number} params.limit - Items per page (default: 10)
-   * @param {string} params.category - Filter by category: 'makanan' | 'minuman'
-   * @param {string} params.difficulty - Filter by difficulty: 'mudah' | 'sedang' | 'sulit'
-   * @param {string} params.search - Search in name/description
-   * @param {string} params.sort_by - Sort by field (default: 'created_at')
-   * @param {string} params.order - Sort order: 'asc' | 'desc' (default: 'desc')
-   * @returns {Promise}
    */
   async getRecipes(params = {}) {
     try {
-      const response = await apiClient.get('/api/v1/recipes', { params });
+      const response = await apiClient.get("/api/v1/recipes", { params });
       return response;
     } catch (error) {
+      console.error("❌ Error fetching recipes:", error);
       throw error;
     }
   }
@@ -25,57 +18,75 @@ class RecipeService {
   /**
    * Get recipe by ID
    * @param {string} id - Recipe ID
-   * @returns {Promise}
    */
   async getRecipeById(id) {
     try {
       const response = await apiClient.get(`/api/v1/recipes/${id}`);
       return response;
     } catch (error) {
+      console.error("❌ Error fetching recipe:", error);
       throw error;
     }
   }
 
   /**
-   * Create new recipe
+   * Create a new recipe
    * @param {Object} recipeData - Recipe data
-   * @returns {Promise}
    */
   async createRecipe(recipeData) {
     try {
-      const response = await apiClient.post('/api/v1/recipes', recipeData);
+      const response = await apiClient.post("/api/v1/recipes", recipeData);
       return response;
     } catch (error) {
+      console.error("❌ Error creating recipe:", error);
       throw error;
     }
   }
 
   /**
-   * Update existing recipe (full replacement)
+   * Update an existing recipe — ensures image, ingredients, and steps are preserved if not updated
    * @param {string} id - Recipe ID
-   * @param {Object} recipeData - Complete recipe data (all fields required)
-   * @returns {Promise}
+   * @param {Object} recipeData - Partial or full recipe data
    */
   async updateRecipe(id, recipeData) {
     try {
-      const response = await apiClient.put(`/api/v1/recipes/${id}`, recipeData);
+      // Step 1: Get current recipe
+      const existing = await this.getRecipeById(id);
+      const currentData = existing?.data?.data || existing?.data;
+
+      if (!currentData) throw new Error("Recipe not found for update");
+
+      // Step 2: Merge with existing data
+      const mergedData = {
+        ...currentData,
+        ...recipeData,
+        ingredients: recipeData.ingredients?.length
+          ? recipeData.ingredients
+          : currentData.ingredients,
+        steps: recipeData.steps?.length ? recipeData.steps : currentData.steps,
+        image_url: recipeData.image_url || currentData.image_url,
+      };
+
+      // Step 3: Send merged data (PATCH for partial update)
+      const response = await apiClient.patch(`/api/v1/recipes/${id}`, mergedData);
       return response;
     } catch (error) {
+      console.error("❌ Error updating recipe:", error);
       throw error;
     }
   }
 
   /**
-   * Partially update recipe (only send fields to update)
+   * Partially update recipe (explicitly use PATCH)
    * @param {string} id - Recipe ID
-   * @param {Object} partialData - Partial recipe data (only fields to update)
-   * @returns {Promise}
+   * @param {Object} partialData - Only fields to update
    */
   async patchRecipe(id, partialData) {
     try {
       const response = await apiClient.patch(`/api/v1/recipes/${id}`, partialData);
       return response;
     } catch (error) {
+      console.error("❌ Error patching recipe:", error);
       throw error;
     }
   }
@@ -83,18 +94,36 @@ class RecipeService {
   /**
    * Delete recipe
    * @param {string} id - Recipe ID
-   * @returns {Promise}
    */
   async deleteRecipe(id) {
     try {
       const response = await apiClient.delete(`/api/v1/recipes/${id}`);
       return response;
     } catch (error) {
+      console.error("❌ Error deleting recipe:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload image (used in create/edit)
+   * @param {File} file
+   */
+  async uploadImage(file) {
+    if (!file) throw new Error("No file provided");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await apiClient.post("/api/v1/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response;
+    } catch (error) {
+      console.error("❌ Error uploading image:", error);
       throw error;
     }
   }
 }
 
+// ✅ Export as default instance
 export default new RecipeService();
-
-
