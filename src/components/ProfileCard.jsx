@@ -1,44 +1,27 @@
-// src/utils/profileService.js
-const KEY = "resipn_profile_v1";
+// src/components/ProfileCard.jsx
+import React from "react";
 
-/**
- * profile = {
- *   id: string,
- *   name: string,
- *   bio: string,
- *   avatarDataUrl: string, // base64 data url atau empty string
- *   updatedAt: ISOString
- * }
- */
+export default function ProfileCard({ profile, onEdit, onDelete }) {
+  if (!profile) return null;
+  return (
+    <div className="max-w-xl p-6 border rounded shadow-sm bg-white">
+      <div className="flex items-center gap-4">
+        <img
+          src={profile.avatarDataUrl || "/default-avatar.png"}
+          alt="avatar"
+          className="w-20 h-20 rounded-full object-cover border"
+        />
+        <div>
+          <h2 className="text-xl font-semibold">{profile.name}</h2>
+          <p className="text-sm text-gray-600">{profile.bio}</p>
+          <p className="text-xs text-gray-400 mt-2">Terakhir diperbarui: {new Date(profile.updatedAt ?? Date.now()).toLocaleString()}</p>
+        </div>
+      </div>
 
-export function getProfile() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error("getProfile error", err);
-    return null;
-  }
-}
-
-export function saveProfile(profile) {
-  try {
-    const withMeta = { ...profile, updatedAt: new Date().toISOString() };
-    localStorage.setItem(KEY, JSON.stringify(withMeta));
-    return withMeta;
-  } catch (err) {
-    console.error("saveProfile error", err);
-    return null;
-  }
-}
-
-export function deleteProfile() {
-  try {
-    localStorage.removeItem(KEY);
-    return true;
-  } catch (err) {
-    console.error("deleteProfile error", err);
-    return false;
-  }
+      <div className="mt-4 flex gap-2">
+        <button onClick={onEdit} className="px-3 py-1 rounded bg-yellow-400 text-white">Edit</button>
+        <button onClick={onDelete} className="px-3 py-1 rounded bg-red-500 text-white">Hapus</button>
+      </div>
+    </div>
+  );
 }
